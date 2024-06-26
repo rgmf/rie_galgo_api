@@ -1,0 +1,62 @@
+version: "3.8"
+
+services:
+  rie_galgo_api:
+    build:
+      context: .
+      dockerfile: ./docker/fastapi/Dockerfile
+    ports:
+      - "8000:80"
+    networks:
+      - rie_galgo_network
+    volumes:
+      - ./app:/app/app
+      - ./tests:/app/tests
+    environment:
+      - MARIADB_HOST=rie_galgo_mariadb
+    depends_on:
+      - rie_galgo_mariadb
+
+  rie_galgo_mariadb:
+    image: mariadb
+    env_file:
+      - .env
+    environment:
+      MARIADB_ROOT_PASSWORD: "${DB_PASSWORD}"
+      MARIADB_DATABASE: "${DB_DATABASE}"
+      MARIADB_USER: "${DB_USERNAME}"
+      MARIADB_PASSWORD: "${DB_PASSWORD}"
+    networks:
+      - rie_galgo_network
+    volumes:
+      - ./mariadb_data:/var/lib/mysql
+
+  rie_galgo_mariadb_test:
+    image: mariadb
+    env_file:
+      - .env
+    environment:
+      MARIADB_ROOT_PASSWORD: "${DB_TEST_PASSWORD}"
+      MARIADB_DATABASE: "${DB_TEST_DATABASE}"
+      MARIADB_USER: "${DB_TEST_USERNAME}"
+      MARIADB_PASSWORD: "${DB_TEST_PASSWORD}"
+    networks:
+      - rie_galgo_network
+    ports:
+      - "3307:3306"
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 9090:8080
+    networks:
+      - rie_galgo_network
+
+networks:
+  rie_galgo_network:
+    driver: bridge
+
+volumes:
+  mariadb_data:
+  mariadb_test_data:
