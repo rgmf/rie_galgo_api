@@ -12,34 +12,39 @@ services:
     volumes:
       - ./app:/app/app
       - ./tests:/app/tests
-    environment:
-      - MARIADB_HOST=rie_galgo_mariadb
-    depends_on:
-      - rie_galgo_mariadb
-
-  rie_galgo_mariadb:
-    image: mariadb
     env_file:
       - .env
     environment:
-      MARIADB_ROOT_PASSWORD: "${DB_PASSWORD}"
-      MARIADB_DATABASE: "${DB_DATABASE}"
-      MARIADB_USER: "${DB_USERNAME}"
-      MARIADB_PASSWORD: "${DB_PASSWORD}"
+      MYSQL_HOST: rie_galgo_mysql
+      MYSQL_DATABASE: "${DB_DATABASE}"
+      MYSQL_USER: "${DB_USERNAME}"
+      MYSQL_PASSWORD: "${DB_PASSWORD}"
+    depends_on:
+      - rie_galgo_mysql
+
+  rie_galgo_mysql:
+    image: mysql
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD}"
+      MYSQL_DATABASE: "${DB_DATABASE}"
+      MYSQL_USER: "${DB_USERNAME}"
+      MYSQL_PASSWORD: "${DB_PASSWORD}"
     networks:
       - rie_galgo_network
     volumes:
-      - ./mariadb_data:/var/lib/mysql
+      - ./mysql_data:/var/lib/mysql
 
-  rie_galgo_mariadb_test:
-    image: mariadb
+  rie_galgo_mysql_test:
+    image: mysql
     env_file:
       - .env
     environment:
-      MARIADB_ROOT_PASSWORD: "${DB_TEST_PASSWORD}"
-      MARIADB_DATABASE: "${DB_TEST_DATABASE}"
-      MARIADB_USER: "${DB_TEST_USERNAME}"
-      MARIADB_PASSWORD: "${DB_TEST_PASSWORD}"
+      MYSQL_ROOT_PASSWORD: "${DB_TEST_PASSWORD}"
+      MYSQL_DATABASE: "${DB_TEST_DATABASE}"
+      MYSQL_USER: "${DB_TEST_USERNAME}"
+      MYSQL_PASSWORD: "${DB_TEST_PASSWORD}"
     networks:
       - rie_galgo_network
     ports:
@@ -49,7 +54,7 @@ services:
     image: adminer
     restart: always
     ports:
-      - 9090:8080
+      - 9191:8080
     networks:
       - rie_galgo_network
 
@@ -58,5 +63,5 @@ networks:
     driver: bridge
 
 volumes:
-  mariadb_data:
-  mariadb_test_data:
+  mysql_data:
+  mysql_test_data:

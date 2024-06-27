@@ -30,8 +30,10 @@ async def login_for_access_token(
         form_data: OAuth2PasswordRequestForm = Depends(),
         db: Session = Depends(get_db)
 ):
-    user: User | None = get_user_by_username(db, form_data.username)
-    user: User | None = authenticate_user(user, form_data.password)
+    user: User | None = authenticate_user(
+        get_user_by_username(db, form_data.username),
+        form_data.password
+    )
 
     if user is None:
         raise HTTPException(
