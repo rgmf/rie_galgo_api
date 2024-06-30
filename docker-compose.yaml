@@ -12,6 +12,7 @@ services:
     volumes:
       - ./app:/app/app
       - ./tests:/app/tests
+      - ./media_data:/app/media
     env_file:
       - .env
     environment:
@@ -19,6 +20,7 @@ services:
       MYSQL_DATABASE: "${DB_DATABASE}"
       MYSQL_USER: "${DB_USERNAME}"
       MYSQL_PASSWORD: "${DB_PASSWORD}"
+      UPLOAD_DIR: "${UPLOAD_DIR}"
     depends_on:
       - rie_galgo_mysql
 

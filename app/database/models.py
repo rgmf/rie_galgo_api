@@ -29,7 +29,7 @@ class MediaBase(BaseModel):
     thumbnail: str
     created_at: datetime
     updated_at: datetime
-    size: int | None = None
+    size: int
     media_created: datetime | None = None
     media_type: str | None = None
     mime_type: str | None = None
@@ -48,24 +48,39 @@ class Media(MediaBase):
         from_attributes = True
 
 
+class MediaOut(BaseModel):
+    data: list[Media]
+
+
 class AlbumBase(BaseModel):
     name: str
     public: bool
-    created_at: datetime
-    updated_at: datetime
     description: str | None = None
 
 
 class AlbumCreate(AlbumBase):
-    pass
-
-
-class Album(AlbumBase):
-    id: int
     user_id: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class Album(AlbumCreate):
+    id: int
 
     class Config:
         from_attributes = True
+
+
+class AlbumIn(AlbumBase):
+    pass
+
+
+class AlbumOut(BaseModel):
+    data: list[Album]
+
+
+class AlbumObjectOut(BaseModel):
+    data: Album
 
 
 class AlbumMediaBase(BaseModel):

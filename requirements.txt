@@ -9,3 +9,5 @@ python-jose[cryptography]
 passlib[bcrypt]
 sqlalchemy
 alembic
+pip
+Pillow
