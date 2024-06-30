@@ -14,7 +14,7 @@ from app.database.crud import (
     create_album as crud_create_album,
     create_media as crud_create_media
 )
-from app.tasks.files import upload_file, read_exif, Exif
+from app.tasks.files import upload_file, read_exif, Exif, UploadFileResult
 
 router = APIRouter(
     prefix="/albums",
@@ -59,19 +59,20 @@ async def create_media(
     )
 
     for file in files:
-        result = await upload_file(file)
+        result: UploadFileResult | None = await upload_file(file)
         if result:
-            relative_file_path, hash_base64, file_size = result
-            exif: Exif = await read_exif(relative_file_path)
+            exif: Exif = await read_exif(result.relative_file_path)
             media_create = MediaCreate(
                 name=str(file.filename),
-                hash=hash_base64,
-                data=relative_file_path,
-                thumbnail=relative_file_path,
+                hash=result.hash_base64,
+                data=result.relative_file_path,
+                thumbnail=result.relative_file_path,
                 created_at=datetime.now(UTC),
                 updated_at=datetime.now(UTC),
-                size=file_size,
-                media_created=exif.date_time_original_dt
+                size=result.file_size,
+                media_created=exif.date_time_original_dt,
+                mime_type=result.mime_type,
+                media_type=result.media_type
             )
             media_upload_out.data.valid.append(crud_create_media(db, media_create))
         else:

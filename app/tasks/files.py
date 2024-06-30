@@ -22,6 +22,33 @@ MEDIAS_DIR_NAME = "medias"
 TMP_PATH = os.path.join(BASE_UPLOAD_DIR, TMP_DIR_NAME)
 MEDIAS_PATH = os.path.join(BASE_UPLOAD_DIR, MEDIAS_DIR_NAME)
 
+UNKNOWN_FORMAT_KEY = "unknown"
+IMAGE_FORMAT_KEY = "image"
+VIDEO_FORMAT_KEY = "video"
+SUPPORTED_FORMATS = {
+    IMAGE_FORMAT_KEY: {
+        "jpeg": "image/jpeg",
+        "jpg": "image/jpeg",
+        "png": "image/png",
+        "gif": "image/gif",
+        "giff": "image/gif",
+        "bmp": "image/bmp",
+        "tiff": "image/tiff"
+    },
+    VIDEO_FORMAT_KEY: {
+    },
+    UNKNOWN_FORMAT_KEY: "unknown/unknown"
+}
+
+
+@dataclass
+class UploadFileResult:
+    relative_file_path: str
+    hash_base64: str
+    file_size: float
+    mime_type: str
+    media_type: str
+
 
 @dataclass
 class Exif:
@@ -51,10 +78,10 @@ def generate_base64_hash(text: str) -> str:
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
     combined_string = f"{text}{datetime.now(UTC).isoformat()}"
     hash = pwd_context.hash(combined_string)
-    return base64.urlsafe_b64encode(hash.encode('utf-8')).decode('utf-8')
+    return base64.urlsafe_b64encode(hash.encode("utf-8")).decode("utf-8")
 
 
-async def upload_file(file: UploadFile) -> tuple[str, str, float] | None:
+async def upload_file(file: UploadFile) -> UploadFileResult | None:
     Path(TMP_PATH).mkdir(parents=True, exist_ok=True)
 
     tmp_file_path: str = os.path.join(TMP_PATH, file.filename)
@@ -72,15 +99,27 @@ async def upload_file(file: UploadFile) -> tuple[str, str, float] | None:
 
             hash_base64 = generate_base64_hash(relative_dir_path)
 
-            extension = file.filename.split('.')[-1]
+            extension = file.filename.split(".")[-1]
 
             relative_file_path = os.path.join(relative_dir_path, f"{hash_base64}.{extension}")
             absolute_file_path = os.path.join(BASE_UPLOAD_DIR, relative_file_path)
             Path(tmp_file_path).rename(Path(absolute_file_path))
 
             file_size = Path(absolute_file_path).stat().st_size
+            format = im.format.lower()
+            mime_type = (
+                SUPPORTED_FORMATS[IMAGE_FORMAT_KEY][format]
+                if format in SUPPORTED_FORMATS[IMAGE_FORMAT_KEY]
+                else SUPPORTED_FORMATS[UNKNOWN_FORMAT_KEY]
+            )
 
-            return relative_file_path, hash_base64, file_size
+            return UploadFileResult(
+                relative_file_path=relative_file_path,
+                hash_base64=hash_base64,
+                file_size=file_size,
+                mime_type=mime_type,
+                media_type=IMAGE_FORMAT_KEY
+            )
 
     except OSError as error:
         logging.debug(f"'{tmp_file_path}' is not an image: {error}")
