@@ -4,4 +4,5 @@ venv/
 *.db
 db/
 mysql_data/
+media_data/
 app/alembic/versions/

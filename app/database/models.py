@@ -99,3 +99,12 @@ class AlbumMedia(AlbumMediaBase):
 
     class Config:
         from_attributes = True
+
+
+class MediaUpload(BaseModel):
+    valid: list[Media]
+    invalid: list[str]
+
+
+class MediaUploadOut(BaseModel):
+    data: MediaUpload

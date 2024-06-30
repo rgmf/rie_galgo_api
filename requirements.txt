@@ -11,3 +11,4 @@ sqlalchemy
 alembic
 pip
 Pillow
+exifread

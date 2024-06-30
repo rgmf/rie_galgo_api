@@ -1,3 +1,6 @@
+# Exif
+[Exif Tool](https://exiftool.org/)
+
 # Rebuild docker container
 For instance, if you change dependencies in `rie_galgo_api` then you have tu run these commands to re-build the container:
 
