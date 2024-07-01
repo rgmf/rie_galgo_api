@@ -12,3 +12,4 @@ alembic
 pip
 Pillow
 exifread
+imagehash
