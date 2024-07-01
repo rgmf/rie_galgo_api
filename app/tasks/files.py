@@ -8,6 +8,7 @@ from PIL import Image
 from pathlib import Path
 from datetime import datetime, UTC, date
 from dataclasses import dataclass, field
+from fractions import Fraction
 
 from fastapi import UploadFile
 from passlib.context import CryptContext
@@ -55,7 +56,19 @@ class Exif:
     date_time_original_dt: datetime | None = field(init=False)
     date_time_original: exifread.classes.IfdTag | None
 
+    latitude_decimal_degrees: float | None = field(init=False)
+    latitude_ref: exifread.classes.IfdTag | None
+    latitude: exifread.classes.IfdTag | None
+
+    longitude_decimal_degrees: float | None = field(init=False)
+    longitude_ref: exifread.classes.IfdTag | None
+    longitude: exifread.classes.IfdTag | None
+
     def __post_init__(self):
+        self.__compute_date_time_original()
+        self.__compute_latitude_and_longitude()
+
+    def __compute_date_time_original(self):
         if self.date_time_original is None:
             self.date_time_original_dt = None
             return
@@ -72,6 +85,34 @@ class Exif:
             )
         except Exception:
             self.date_time_original_dt = None
+
+    def __compute_latitude_and_longitude(self):
+        if (
+                not self.latitude or not self.longitude or not self.latitude_ref or not self.longitude_ref or
+                len(self.latitude.values) != 3 or len(self.longitude.values) != 3
+        ):
+            self.latitude_decimal_degrees = None
+            self.longitude_decimal_degrees = None
+            return
+
+        self.latitude_decimal_degrees = convert_to_decimal_degrees(self.latitude.values)
+        self.longitude_decimal_degrees = convert_to_decimal_degrees(self.longitude.values)
+
+        if str(self.latitude_ref) != "N":
+            self.latitude_decimal_degrees = -self.latitude_decimal_degrees
+
+        if str(self.longitude_ref) != "E":
+            self.longitude_decimal_degrees = -self.longitude_decimal_degrees
+
+
+def convert_to_decimal_degrees(values: list[float, float, float]) -> float:
+    degrees = float(values[0])
+    minutes = float(values[1])
+    seconds = float(Fraction(values[2]))
+
+    decimal_degrees = degrees + (minutes / 60.0) + (seconds / 3600.0)
+
+    return decimal_degrees
 
 
 def generate_base64_hash(text: str) -> str:
@@ -130,12 +171,29 @@ async def upload_file(file: UploadFile) -> UploadFileResult | None:
 
 async def read_exif(relative_file_path: str) -> Exif:
     date_time_original = None
+    latitude = None
+    longitude = None
+    latitude_ref = None
+    longitude_ref = None
 
     with open(os.path.join(BASE_UPLOAD_DIR, relative_file_path), "rb") as fo:
         tags = exifread.process_file(fo)
+
         if "Image DateTimeOriginal" in tags:
             date_time_original = tags["Image DateTimeOriginal"]
         elif "Image DateTime" in tags:
             date_time_original = tags["Image DateTime"]
 
-    return Exif(date_time_original=date_time_original)
+        if "GPS GPSLatitude" in tags and "GPS GPSLongitude" in tags and "GPS GPSLatitudeRef" in tags and "GPS GPSLongitudeRef" in tags:
+            latitude = tags["GPS GPSLatitude"]
+            longitude = tags["GPS GPSLongitude"]
+            latitude_ref = tags["GPS GPSLatitudeRef"]
+            longitude_ref = tags["GPS GPSLongitudeRef"]
+
+    return Exif(
+        date_time_original=date_time_original,
+        latitude=latitude,
+        longitude=longitude,
+        latitude_ref=latitude_ref,
+        longitude_ref=longitude_ref
+    )

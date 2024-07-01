@@ -33,8 +33,8 @@ class MediaBase(BaseModel):
     media_created: datetime | None = None
     media_type: str | None = None
     mime_type: str | None = None
-    latitude: str | None = None
-    longitude: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
 
 
 class MediaCreate(MediaBase):

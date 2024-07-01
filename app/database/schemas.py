@@ -1,6 +1,6 @@
 from sqlalchemy import (
     DateTime, Boolean, Column, ForeignKey, UniqueConstraint, Integer, String,
-    Text, func
+    Text, func, Double
 )
 from sqlalchemy.orm import relationship
 
@@ -31,8 +31,8 @@ class Media(Base):
     media_created = Column(DateTime)
     media_type = Column(String(255))
     mime_type = Column(String(255))
-    latitude = Column(String(50))
-    longitude = Column(String(50))
+    latitude = Column(Double)
+    longitude = Column(Double)
     created_at = Column(DateTime, default=func.now(), nullable=False)
     updated_at = Column(
         DateTime, default=func.now(), onupdate=func.now(), nullable=False

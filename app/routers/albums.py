@@ -72,7 +72,9 @@ async def create_media(
                 size=result.file_size,
                 media_created=exif.date_time_original_dt,
                 mime_type=result.mime_type,
-                media_type=result.media_type
+                media_type=result.media_type,
+                latitude=exif.latitude_decimal_degrees,
+                longitude=exif.longitude_decimal_degrees
             )
             media_upload_out.data.valid.append(crud_create_media(db, media_create))
         else:
