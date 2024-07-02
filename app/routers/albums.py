@@ -66,6 +66,7 @@ async def create_media(
     for file in files:
         file_uploader = FileUploader(file)
         await file_uploader.upload()
+        file_uploader.cleanup()
 
         if not file_uploader.has_error():
             try:
