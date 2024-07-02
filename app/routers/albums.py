@@ -78,11 +78,11 @@ async def create_media(
                     created_at=datetime.now(UTC),
                     updated_at=datetime.now(UTC),
                     size=file_uploader.file_size,
-                    media_created=file_uploader.exif().date_time_original_dt,
+                    media_created=file_uploader.metadata().date_time_original_dt,
                     mime_type=file_uploader.mime_type,
                     media_type=file_uploader.media_type,
-                    latitude=file_uploader.exif().latitude_decimal_degrees,
-                    longitude=file_uploader.exif().longitude_decimal_degrees
+                    latitude=file_uploader.metadata().latitude_decimal_degrees,
+                    longitude=file_uploader.metadata().longitude_decimal_degrees
                 )
                 media_upload_out.data.valid.append(crud_create_media(db, media_create))
             except IntegrityError as e:

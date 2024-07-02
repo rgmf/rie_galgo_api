@@ -13,3 +13,5 @@ pip
 Pillow
 exifread
 imagehash
+python-magic
+ffmpeg-python

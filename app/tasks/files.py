@@ -1,8 +1,11 @@
 import os
 import logging
+import hashlib
 
 import exifread
 import imagehash
+import magic
+import ffmpeg
 
 from PIL import Image
 from pathlib import Path
@@ -22,37 +25,19 @@ MEDIAS_DIR_NAME = "medias"
 TMP_PATH = os.path.join(BASE_UPLOAD_DIR, TMP_DIR_NAME)
 MEDIAS_PATH = os.path.join(BASE_UPLOAD_DIR, MEDIAS_DIR_NAME)
 
-UNKNOWN_FORMAT_KEY = "unknown"
-IMAGE_FORMAT_KEY = "image"
-VIDEO_FORMAT_KEY = "video"
-SUPPORTED_FORMATS = {
-    IMAGE_FORMAT_KEY: {
-        "jpeg": "image/jpeg",
-        "jpg": "image/jpeg",
-        "png": "image/png",
-        "gif": "image/gif",
-        "giff": "image/gif",
-        "bmp": "image/bmp",
-        "tiff": "image/tiff"
-    },
-    VIDEO_FORMAT_KEY: {
-    },
-    UNKNOWN_FORMAT_KEY: "unknown/unknown"
-}
-
 
 @dataclass
-class Exif:
+class Metadata:
     date_time_original_dt: datetime | None = field(init=False)
-    date_time_original: exifread.classes.IfdTag | None = None
+    date_time_original = None
 
     latitude_decimal_degrees: float | None = field(init=False)
-    latitude_ref: exifread.classes.IfdTag | None = None
-    latitude: exifread.classes.IfdTag | None = None
+    latitude_ref = None
+    latitude = None
 
     longitude_decimal_degrees: float | None = field(init=False)
-    longitude_ref: exifread.classes.IfdTag | None = None
-    longitude: exifread.classes.IfdTag | None = None
+    longitude_ref = None
+    longitude = None
 
     def __post_init__(self):
         self.__compute_date_time_original()
@@ -64,7 +49,7 @@ class Exif:
             return
 
         dto: str = str(self.date_time_original)
-        if len(dto) != 19:
+        if len(dto) < 19:
             self.date_time_original_dt = None
             return
 
@@ -119,8 +104,8 @@ class FileUploader:
         self.file_hash: str | None = None
         self.file_size: float | None = None
         self.mime_type: str | None = None
-        self.media_type: str = IMAGE_FORMAT_KEY
-        self.__exif: Exif | None = None
+        self.media_type: str | None = None
+        self.__metadata: Metadata | None = None
 
         self.__error: str | None = None
 
@@ -129,11 +114,23 @@ class FileUploader:
         if self.has_error():
             return
 
-        await self.__process_image()
-        if self.has_error():
+        magic_mime = magic.Magic(mime=True)
+        self.mime_type = magic_mime.from_file(self.__tmp_file_path)
+        if self.mime_type.startswith("image"):
+            self.media_type = "image"
+            await self.__process_image()
+            await self.__read_metadata_from_exif()
+        elif self.mime_type.startswith("video"):
+            self.media_type = "video"
+            await self.__process_video()
+            await self.__read_metadata_from_ffmpeg()
+        else:
+            self.__error = f"'{self.__file.filename}' mime type is not an image or video one: {self.mime_type}"
+            logging.error(self.__error)
             return
 
-        await self.__read_exif()
+        if self.has_error():
+            return
 
     def cleanup(self):
         try:
@@ -147,8 +144,8 @@ class FileUploader:
     def error(self) -> str:
         return self.__error if self.__error is not None else ""
 
-    def exif(self) -> Exif:
-        return self.__exif if self.__exif is not None else Exif()
+    def metadata(self) -> Metadata:
+        return self.__metadata if self.__metadata is not None else Metadata()
 
     async def __upload_tmp_file(self):
         try:
@@ -165,8 +162,8 @@ class FileUploader:
 
     async def __process_image(self):
         try:
-            with Image.open(self.__tmp_file_path) as im:
-                self.file_hash = str(imagehash.phash(im))
+            with Image.open(self.__tmp_file_path) as img:
+                self.file_hash = str(imagehash.phash(img))
 
                 Path(self.__absolute_dir_path).mkdir(parents=True, exist_ok=True)
 
@@ -177,19 +174,24 @@ class FileUploader:
                 Path(self.__tmp_file_path).rename(Path(self.__absolute_file_path))
 
                 self.file_size = Path(self.__absolute_file_path).stat().st_size
-                format = im.format.lower()
-                self.mime_type = (
-                    SUPPORTED_FORMATS[IMAGE_FORMAT_KEY][format]
-                    if format in SUPPORTED_FORMATS[IMAGE_FORMAT_KEY]
-                    else SUPPORTED_FORMATS[UNKNOWN_FORMAT_KEY]
-                )
         except OSError as error:
             self.__error = f"'{self.__tmp_file_path}' is not an image: {error}"
             logging.debug(self.__error)
         except Exception as error:
             logging.error(f"Error uploading file '{self.__tmp_file_path}': {error}")
 
-    async def __read_exif(self):
+    async def __process_video(self):
+        hash_object = hashlib.sha256(f"{self.__tmp_file_path}{self.__file.filename}{str(datetime.now())}".encode())
+        self.file_hash = hash_object.hexdigest()
+
+        Path(self.__absolute_dir_path).mkdir(parents=True, exist_ok=True)
+        extension = self.__file.filename.split(".")[-1]
+        self.relative_file_path = os.path.join(self.__relative_dir_path, f"{self.file_hash}.{extension}")
+        self.__absolute_file_path = os.path.join(BASE_UPLOAD_DIR, self.relative_file_path)
+        Path(self.__tmp_file_path).rename(Path(self.__absolute_file_path))
+        self.file_size = Path(self.__absolute_file_path).stat().st_size
+
+    async def __read_metadata_from_exif(self):
         date_time_original = None
         latitude = None
         longitude = None
@@ -214,14 +216,25 @@ class FileUploader:
                     latitude_ref = tags["GPS GPSLatitudeRef"]
                     longitude_ref = tags["GPS GPSLongitudeRef"]
         except OSError as error:
-            logging.debug(f"Error reading exif data from {self.__absolute_file_path}: {error}")
+            logging.debug(f"Error reading metadata from {self.__absolute_file_path}: {error}")
         except Exception as error:
-            logging.error(f"Error reading exif data from {self.__absolute_file_path}: {error}")
+            logging.error(f"Error reading metadata from {self.__absolute_file_path}: {error}")
 
-        self.__exif = Exif(
+        self.__metadata = Metadata(
             date_time_original=date_time_original,
             latitude=latitude,
             longitude=longitude,
             latitude_ref=latitude_ref,
             longitude_ref=longitude_ref
         )
+
+    async def __read_metadata_from_ffmpeg(self):
+        date_time_original = None
+        try:
+            probe = ffmpeg.probe(self.__absolute_file_path)
+            date_time_original = probe["format"]["tags"].get("creation_time", None)
+        except ffmpeg.Error as error:
+            logging.error(f"Error reading metadata from {self.__absolute_file_path}: {error}")
+        except Exception as error:
+            logging.error(f"Error reading metadata from {self.__absolute_file_path}: {error}")
+        self.__metadata = Metadata(date_time_original=date_time_original)
