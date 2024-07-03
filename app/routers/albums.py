@@ -11,11 +11,12 @@ from app.auth.auth import get_auth_user
 from app.database.database import get_db
 from app.database.models import (
     User, Album, AlbumIn, AlbumOut, AlbumObjectOut, AlbumCreate, MediaCreate,
-    MediaUpload, MediaUploadOut
+    MediaUpload, MediaUploadOut, MediaOut
 )
 from app.database.crud import (
     get_albums,
     get_album_by_id,
+    get_album_medias,
     create_album as crud_create_album,
     create_media as crud_create_media
 )
@@ -35,6 +36,22 @@ def read_albums(
         db: Session = Depends(get_db)
 ):
     return AlbumOut(data=get_albums(db, user.username))
+
+
+@router.get("/{id}/medias/", response_model=MediaOut, status_code=status.HTTP_200_OK)
+def read_album_medias(
+        id: int,
+        user: User = Depends(get_auth_user),
+        db: Session = Depends(get_db)
+):
+    album: Album = get_album_by_id(db, id)
+    if album is None:
+        raise HTTPException(status_code=404, detail="Album not found")
+
+    if album.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Forbidden action for the user")
+
+    return MediaOut(data=get_album_medias(db, id))
 
 
 @router.post("/", response_model=AlbumObjectOut, status_code=status.HTTP_201_CREATED)
