@@ -1,5 +1,5 @@
 from pydantic import BaseModel
 
 
-class Error404Model(BaseModel):
+class ErrorModel(BaseModel):
     detail: str

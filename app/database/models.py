@@ -22,40 +22,6 @@ class User(UserBase):
         from_attributes = True
 
 
-class MediaBase(BaseModel):
-    name: str
-    hash: str
-    data: str
-    thumbnail: str
-    created_at: datetime
-    updated_at: datetime
-    size: int
-    media_created: datetime | None = None
-    media_type: str | None = None
-    mime_type: str | None = None
-    latitude: float | None = None
-    longitude: float | None = None
-
-
-class MediaCreate(MediaBase):
-    pass
-
-
-class Media(MediaBase):
-    id: int
-
-    class Config:
-        from_attributes = True
-
-
-class MediaOut(BaseModel):
-    data: list[Media]
-
-
-class MediaObjectOut(BaseModel):
-    data: Media
-
-
 class AlbumBase(BaseModel):
     name: str
     public: bool
@@ -93,16 +59,50 @@ class AlbumMediaBase(BaseModel):
 
 
 class AlbumMediaCreate(AlbumMediaBase):
-    pass
-
-
-class AlbumMedia(AlbumMediaBase):
-    id: int
     album_id: int
     media_id: int
 
+
+class AlbumMedia(AlbumMediaCreate):
+    id: int
+
     class Config:
         from_attributes = True
+
+
+class MediaBase(BaseModel):
+    name: str
+    hash: str
+    data: str
+    thumbnail: str
+    created_at: datetime
+    updated_at: datetime
+    size: int
+    media_created: datetime | None = None
+    media_type: str | None = None
+    mime_type: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+
+
+class MediaCreate(MediaBase):
+    pass
+
+
+class Media(MediaBase):
+    id: int
+    album: Album | None = None
+
+    class Config:
+        from_attributes = True
+
+
+class MediaOut(BaseModel):
+    data: list[Media]
+
+
+class MediaObjectOut(BaseModel):
+    data: Media
 
 
 class MediaUpload(BaseModel):

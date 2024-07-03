@@ -38,6 +38,12 @@ class Media(Base):
         DateTime, default=func.now(), onupdate=func.now(), nullable=False
     )
 
+    album_media = relationship("AlbumMedia", back_populates="media", uselist=False)
+
+    @property
+    def album(self):
+        return self.album_media.album if self.album_media else None
+
 
 class Album(Base):
     __tablename__ = 'albums'

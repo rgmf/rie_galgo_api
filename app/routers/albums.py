@@ -6,7 +6,7 @@ from fastapi import APIRouter, status, Depends, UploadFile, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from app.error_models import Error404Model
+from app.error_models import ErrorModel
 from app.auth.auth import get_auth_user
 from app.database.database import get_db
 from app.database.models import (
@@ -58,7 +58,7 @@ def create_album(
     "/{album_id}/medias/",
     response_model=MediaUploadOut,
     status_code=status.HTTP_201_CREATED,
-    responses={404: {"model": Error404Model}}
+    responses={403: {"model": ErrorModel}, 404: {"model": ErrorModel}}
 )
 async def create_media(
         album_id: int,
@@ -69,6 +69,9 @@ async def create_media(
     album: Album = get_album_by_id(db, album_id)
     if album is None:
         raise HTTPException(status_code=404, detail="Album not found")
+
+    if album.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Forbidden action for the user")
 
     media_upload_out = MediaUploadOut(
         data=MediaUpload(valid=[], invalid=[])
@@ -95,7 +98,7 @@ async def create_media(
                     latitude=file_uploader.metadata.latitude_decimal_degrees,
                     longitude=file_uploader.metadata.longitude_decimal_degrees
                 )
-                media_upload_out.data.valid.append(crud_create_media(db, media_create))
+                media_upload_out.data.valid.append(crud_create_media(db, media_create, album.id))
             except IntegrityError as e:
                 media_upload_out.data.invalid.append(
                     f"Error uploading {file.filename}: the file already exists"

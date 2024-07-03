@@ -1,3 +1,5 @@
+from datetime import datetime, UTC
+
 from sqlalchemy.orm import Session
 
 from . import schemas, models
@@ -35,9 +37,21 @@ def get_ephemeris(db: Session, username: str):
     return []
 
 
-def create_media(db: Session, media: models.MediaCreate):
+def create_media(db: Session, media: models.MediaCreate, album_id: int):
     db_media = schemas.Media(**media.dict())
     db.add(db_media)
     db.commit()
     db.refresh(db_media)
+
+    album_media = models.AlbumMediaCreate(
+        media_id=db_media.id,
+        album_id=album_id,
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC)
+    )
+    db_album_media = schemas.AlbumMedia(**album_media.dict())
+    db.add(db_album_media)
+    db.commit()
+    db.refresh(db_album_media)
+
     return db_media
