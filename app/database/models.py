@@ -52,6 +52,10 @@ class MediaOut(BaseModel):
     data: list[Media]
 
 
+class MediaObjectOut(BaseModel):
+    data: Media
+
+
 class AlbumBase(BaseModel):
     name: str
     public: bool

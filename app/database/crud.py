@@ -7,6 +7,10 @@ def get_user_by_username(db: Session, username: str):
     return db.query(schemas.User).filter(schemas.User.username == username).first()
 
 
+def get_album_by_id(db: Session, id: int):
+    return db.query(schemas.Album).get(id)
+
+
 def get_albums(db: Session, username: str):
     return db.query(schemas.Album)\
              .join(schemas.User)\
@@ -21,6 +25,10 @@ def create_album(db: Session, album: models.AlbumCreate):
     db.commit()
     db.refresh(db_album)
     return db_album
+
+
+def get_media_by_id(db: Session, id: int):
+    return db.query(schemas.Media).get(id)
 
 
 def get_ephemeris(db: Session, username: str):

@@ -29,15 +29,15 @@ MEDIAS_PATH = os.path.join(BASE_UPLOAD_DIR, MEDIAS_DIR_NAME)
 @dataclass
 class Metadata:
     date_time_original_dt: datetime | None = field(init=False)
-    date_time_original = None
+    date_time_original: exifread.classes.IfdTag | str | None = None
 
     latitude_decimal_degrees: float | None = field(init=False)
-    latitude_ref = None
-    latitude = None
+    latitude_ref: exifread.classes.IfdTag | str | None = None
+    latitude: exifread.classes.IfdTag | str | None = None
 
     longitude_decimal_degrees: float | None = field(init=False)
-    longitude_ref = None
-    longitude = None
+    longitude_ref: exifread.classes.IfdTag | str | None = None
+    longitude: exifread.classes.IfdTag | str | None = None
 
     def __post_init__(self):
         self.__compute_date_time_original()

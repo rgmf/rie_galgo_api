@@ -2,18 +2,20 @@ import logging
 
 from datetime import datetime, UTC
 
-from fastapi import APIRouter, status, Depends, UploadFile
+from fastapi import APIRouter, status, Depends, UploadFile, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
+from app.error_models import Error404Model
 from app.auth.auth import get_auth_user
 from app.database.database import get_db
 from app.database.models import (
-    User, AlbumIn, AlbumOut, AlbumObjectOut, AlbumCreate, MediaCreate,
+    User, Album, AlbumIn, AlbumOut, AlbumObjectOut, AlbumCreate, MediaCreate,
     MediaUpload, MediaUploadOut
 )
 from app.database.crud import (
     get_albums,
+    get_album_by_id,
     create_album as crud_create_album,
     create_media as crud_create_media
 )
@@ -35,7 +37,7 @@ def read_albums(
     return AlbumOut(data=get_albums(db, user.username))
 
 
-@router.post("/", response_model=AlbumObjectOut, status_code=status.HTTP_200_OK)
+@router.post("/", response_model=AlbumObjectOut, status_code=status.HTTP_201_CREATED)
 def create_album(
         album: AlbumIn,
         user: User = Depends(get_auth_user),
@@ -52,13 +54,22 @@ def create_album(
     return AlbumObjectOut(data=crud_create_album(db, album))
 
 
-@router.post("/{album_id}/medias/", response_model=MediaUploadOut, status_code=status.HTTP_200_OK)
+@router.post(
+    "/{album_id}/medias/",
+    response_model=MediaUploadOut,
+    status_code=status.HTTP_201_CREATED,
+    responses={404: {"model": Error404Model}}
+)
 async def create_media(
         album_id: int,
         files: list[UploadFile],
         user: User = Depends(get_auth_user),
         db: Session = Depends(get_db)
 ):
+    album: Album = get_album_by_id(db, album_id)
+    if album is None:
+        raise HTTPException(status_code=404, detail="Album not found")
+
     media_upload_out = MediaUploadOut(
         data=MediaUpload(valid=[], invalid=[])
     )

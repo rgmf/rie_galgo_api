@@ -6,3 +6,4 @@ db/
 mysql_data/
 media_data/
 app/alembic/versions/
+migration_script/
