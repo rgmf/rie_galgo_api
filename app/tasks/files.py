@@ -105,7 +105,7 @@ class FileUploader:
         self.file_size: float | None = None
         self.mime_type: str | None = None
         self.media_type: str | None = None
-        self.__metadata: Metadata | None = None
+        self.metadata: Metadata = Metadata()
 
         self.__error: str | None = None
 
@@ -143,9 +143,6 @@ class FileUploader:
 
     def error(self) -> str:
         return self.__error if self.__error is not None else ""
-
-    def metadata(self) -> Metadata:
-        return self.__metadata if self.__metadata is not None else Metadata()
 
     async def __upload_tmp_file(self):
         try:
