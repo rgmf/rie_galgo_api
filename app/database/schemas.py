@@ -66,17 +66,17 @@ class AlbumMedia(Base):
     __tablename__ = 'album_media'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    album_id = Column(Integer, ForeignKey('albums.id'), nullable=False)
-    media_id = Column(Integer, ForeignKey('medias.id'), nullable=False)
+    album_id = Column(Integer, ForeignKey('albums.id', ondelete="CASCADE"), nullable=False)
+    media_id = Column(Integer, ForeignKey('medias.id', ondelete="CASCADE"), nullable=False)
     created_at = Column(DateTime, default=func.now(), nullable=False)
     updated_at = Column(
         DateTime, default=func.now(), onupdate=func.now(), nullable=False
     )
 
     album = relationship('Album', back_populates='album_media')
-    media = relationship('Media')
+    media = relationship('Media', back_populates="album_media")
 
-    __table_args__ = (UniqueConstraint('album_id', 'media_id', name='album_id'),)
+    __table_args__ = (UniqueConstraint('album_id', 'media_id', name='album_id_media_id_uc'),)
 
 
 class Trash(Base):
