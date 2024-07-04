@@ -28,8 +28,6 @@ def get_albums(db: Session, username: str) -> list[models.Album]:
     return [models.Album.from_orm(a) for a in albums]
 
 
-import logging
-logging.basicConfig(level=logging.DEBUG)
 def get_album_medias(db: Session, id: int) -> list[models.Media]:
     medias = db.query(schemas.Media)\
                .join(schemas.AlbumMedia, schemas.Media.id == schemas.AlbumMedia.media_id)\
