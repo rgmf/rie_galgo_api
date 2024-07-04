@@ -30,6 +30,13 @@ router = APIRouter(
 )
 
 
+def validate_album_access(album: Album, user: User):
+    if album is None:
+        raise HTTPException(status_code=404, detail="Album not found")
+    if album.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Forbidden action for the user")
+
+
 @router.get("/", response_model=AlbumOut, status_code=status.HTTP_200_OK)
 def read_albums(
         user: User = Depends(get_auth_user),
@@ -45,12 +52,7 @@ def read_album_medias(
         db: Session = Depends(get_db)
 ):
     album: Album = get_album_by_id(db, id)
-    if album is None:
-        raise HTTPException(status_code=404, detail="Album not found")
-
-    if album.user_id != user.id:
-        raise HTTPException(status_code=403, detail="Forbidden action for the user")
-
+    validate_album_access(album, user)
     return MediaOut(data=get_album_medias(db, id))
 
 
@@ -84,11 +86,7 @@ async def create_media(
         db: Session = Depends(get_db)
 ):
     album: Album = get_album_by_id(db, album_id)
-    if album is None:
-        raise HTTPException(status_code=404, detail="Album not found")
-
-    if album.user_id != user.id:
-        raise HTTPException(status_code=403, detail="Forbidden action for the user")
+    validate_album_access(album, user)
 
     media_upload_out = MediaUploadOut(
         data=MediaUpload(valid=[], invalid=[])
@@ -105,7 +103,7 @@ async def create_media(
                     name=str(file.filename),
                     hash=file_uploader.file_hash,
                     data=file_uploader.relative_file_path,
-                    thumbnail=file_uploader.relative_file_path,
+                    thumbnail=file_uploader.relative_thumbnail_path,
                     created_at=datetime.now(UTC),
                     updated_at=datetime.now(UTC),
                     size=file_uploader.file_size,

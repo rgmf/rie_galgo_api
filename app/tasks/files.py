@@ -21,9 +21,12 @@ BASE_UPLOAD_DIR = os.getenv("UPLOAD_DIR", "")
 
 TMP_DIR_NAME = "tmp"
 MEDIAS_DIR_NAME = "medias"
+THUMBNAILS_DIR_NAME = "thumbnails"
+THUMBNAILS_SIZE = (512, 512)
 
 TMP_PATH = os.path.join(BASE_UPLOAD_DIR, TMP_DIR_NAME)
 MEDIAS_PATH = os.path.join(BASE_UPLOAD_DIR, MEDIAS_DIR_NAME)
+THUMBNAILS_PATH = os.path.join(BASE_UPLOAD_DIR, THUMBNAILS_DIR_NAME)
 
 
 @dataclass
@@ -98,9 +101,13 @@ class FileUploader:
         self.__tmp_file_path: str = os.path.join(TMP_PATH, file.filename)
         self.__relative_dir_path: str = os.path.join(MEDIAS_DIR_NAME, date.today().isoformat())
         self.__absolute_dir_path: str = os.path.join(BASE_UPLOAD_DIR, self.__relative_dir_path)
+        self.__relative_thumbnails_dir_path: str = os.path.join(THUMBNAILS_DIR_NAME, date.today().isoformat())
+        self.__absolute_thumbnails_dir_path: str = os.path.join(BASE_UPLOAD_DIR, self.__relative_thumbnails_dir_path)
 
         self.__absolute_file_path: str | None = None
+        self.__absolute_thumbnail_path: str | None = None
         self.relative_file_path: str | None = None
+        self.relative_thumbnail_path: str | None = None
         self.file_hash: str | None = None
         self.file_size: float | None = None
         self.mime_type: str | None = None
@@ -163,12 +170,31 @@ class FileUploader:
                 self.file_hash = str(imagehash.phash(img))
 
                 Path(self.__absolute_dir_path).mkdir(parents=True, exist_ok=True)
+                Path(self.__absolute_thumbnails_dir_path).mkdir(parents=True, exist_ok=True)
 
                 extension = self.__file.filename.split(".")[-1]
 
                 self.relative_file_path = os.path.join(self.__relative_dir_path, f"{self.file_hash}.{extension}")
                 self.__absolute_file_path = os.path.join(BASE_UPLOAD_DIR, self.relative_file_path)
                 Path(self.__tmp_file_path).rename(Path(self.__absolute_file_path))
+
+                self.relative_thumbnail_path = os.path.join(self.__relative_thumbnails_dir_path, f"{self.file_hash}.{extension}")
+                self.__absolute_thumbnail_path = os.path.join(BASE_UPLOAD_DIR, self.relative_thumbnail_path)
+
+                # Generate and save thumbnail
+                width, height = img.size
+                logging.debug(f"{width}x{height}")
+                if width >= THUMBNAILS_SIZE[0] * 2 and height >= THUMBNAILS_SIZE[1] * 2:
+                    img.thumbnail((THUMBNAILS_SIZE[0] * 2, THUMBNAILS_SIZE[1] * 2))
+                    width, height = img.size
+                logging.debug(f"{width}x{height}")
+                left = (width - THUMBNAILS_SIZE[0]) // 2
+                top = (height - THUMBNAILS_SIZE[1]) // 2
+                right = (width + THUMBNAILS_SIZE[0]) // 2
+                bottom = (height + THUMBNAILS_SIZE[1]) // 2
+                img_crop = img.crop((left, top, right, bottom))
+                img_crop.thumbnail(THUMBNAILS_SIZE)
+                img_crop.save(self.__absolute_thumbnail_path, "JPEG")
 
                 self.file_size = Path(self.__absolute_file_path).stat().st_size
         except OSError as error:
@@ -182,10 +208,29 @@ class FileUploader:
         self.file_hash = hash_object.hexdigest()
 
         Path(self.__absolute_dir_path).mkdir(parents=True, exist_ok=True)
+        Path(self.__absolute_thumbnails_dir_path).mkdir(parents=True, exist_ok=True)
+
         extension = self.__file.filename.split(".")[-1]
+
         self.relative_file_path = os.path.join(self.__relative_dir_path, f"{self.file_hash}.{extension}")
         self.__absolute_file_path = os.path.join(BASE_UPLOAD_DIR, self.relative_file_path)
         Path(self.__tmp_file_path).rename(Path(self.__absolute_file_path))
+
+        self.relative_thumbnail_path = os.path.join(self.__relative_thumbnails_dir_path, f"{self.file_hash}.jpg")
+        self.__absolute_thumbnail_path = os.path.join(BASE_UPLOAD_DIR, self.relative_thumbnail_path)
+
+        # Extract a frame to create a thumbnail
+        try:
+            ffmpeg\
+                .input(self.__absolute_file_path, ss="00:00:01")\
+                .filter('crop', THUMBNAILS_SIZE[0], THUMBNAILS_SIZE[1])\
+                .output(self.__absolute_thumbnail_path, vframes=1)\
+                .run()
+        except ffmpeg.Error as error:
+            logging.error(f"Error extracting thumbnail from video {self.__file.filename}: {error}")
+        except Exception as error:
+            logging.error(f"Error extracting thumbnail from video {self.__file.filename}: {error}")
+
         self.file_size = Path(self.__absolute_file_path).stat().st_size
 
     async def __read_metadata_from_exif(self):
@@ -217,7 +262,7 @@ class FileUploader:
         except Exception as error:
             logging.error(f"Error reading metadata from {self.__absolute_file_path}: {error}")
 
-        self.__metadata = Metadata(
+        self.metadata = Metadata(
             date_time_original=date_time_original,
             latitude=latitude,
             longitude=longitude,
@@ -234,4 +279,4 @@ class FileUploader:
             logging.error(f"Error reading metadata from {self.__absolute_file_path}: {error}")
         except Exception as error:
             logging.error(f"Error reading metadata from {self.__absolute_file_path}: {error}")
-        self.__metadata = Metadata(date_time_original=date_time_original)
+        self.metadata = Metadata(date_time_original=date_time_original)
