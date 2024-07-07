@@ -11,16 +11,17 @@ from app.auth.auth import get_auth_user
 from app.database.database import get_db
 from app.database.models import (
     User, Album, AlbumIn, AlbumOut, AlbumObjectOut, AlbumCreate, MediaCreate,
-    MediaUpload, MediaUploadOut, MediaOut
+    MediaUpload, MediaUploadOut, MediaOut, AlbumWithCover, Media
 )
 from app.database.crud import (
     get_albums,
     get_album_by_id,
     get_album_medias,
+    get_album_cover,
     create_album as crud_create_album,
     create_media as crud_create_media
 )
-from app.tasks.files import FileUploader
+from app.tasks.files import FileUploader, get_base64_media_data
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -42,10 +43,23 @@ def read_albums(
         user: User = Depends(get_auth_user),
         db: Session = Depends(get_db)
 ):
-    return AlbumOut(data=get_albums(db, user.username))
+    albums: list[Album] = get_albums(db, user.username)
+    response: list[AlbumWithCover] = []
+    for a in albums:
+        media_cover: Media | None = get_album_cover(db, a.id)
+        album_with_cover = AlbumWithCover(**a.model_dump())
+        album_with_cover.cover = get_base64_media_data(media_cover.thumbnail) if media_cover else None
+        response.append(album_with_cover)
+
+    return AlbumOut(data=response)
 
 
-@router.get("/{id}/medias/", response_model=MediaOut, status_code=status.HTTP_200_OK)
+@router.get(
+    "/{id}/medias/",
+    response_model=MediaOut,
+    status_code=status.HTTP_200_OK,
+    responses={403: {"model": ErrorModel}, 404: {"model": ErrorModel}}
+)
 def read_album_medias(
         id: int,
         user: User = Depends(get_auth_user),
@@ -62,7 +76,7 @@ def create_album(
         user: User = Depends(get_auth_user),
         db: Session = Depends(get_db)
 ):
-    album = AlbumCreate(
+    album_to_create = AlbumCreate(
         name=album.name,
         public=album.public,
         description=album.description,
@@ -70,22 +84,26 @@ def create_album(
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC)
     )
-    return AlbumObjectOut(data=crud_create_album(db, album))
+    album: Album = crud_create_album(db, album_to_create)
+    if not album:
+        return HTTPException(500, "Albums seems to be created but not returned")
+
+    return AlbumObjectOut(data=AlbumWithCover(**album.model_dump()))
 
 
 @router.post(
-    "/{album_id}/medias/",
+    "/{id}/medias/",
     response_model=MediaUploadOut,
     status_code=status.HTTP_201_CREATED,
     responses={403: {"model": ErrorModel}, 404: {"model": ErrorModel}}
 )
 async def create_media(
-        album_id: int,
+        id: int,
         files: list[UploadFile],
         user: User = Depends(get_auth_user),
         db: Session = Depends(get_db)
 ):
-    album: Album = get_album_by_id(db, album_id)
+    album: Album = get_album_by_id(db, id)
     validate_album_access(album, user)
 
     media_upload_out = MediaUploadOut(

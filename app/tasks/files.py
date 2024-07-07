@@ -1,6 +1,7 @@
 import os
 import logging
 import hashlib
+import base64
 
 import exifread
 import imagehash
@@ -91,6 +92,19 @@ def convert_to_decimal_degrees(values: list[float, float, float]) -> float:
     decimal_degrees = degrees + (minutes / 60.0) + (seconds / 3600.0)
 
     return decimal_degrees
+
+
+def get_base64_media_data(relative_path: str) -> str | None:
+    try:
+        with open(os.path.join(BASE_UPLOAD_DIR, relative_path), "rb") as f:
+            encoded_file_string = base64.b64encode(f.read())
+    except OSError as error:
+        logging.error(f"Error getting encode data from file {relative_path}: {error}")
+        return None
+    except Exception as error:
+        logging.error(f"Error getting encode data from file {relative_path}: {error}")
+        return None
+    return encoded_file_string
 
 
 class FileUploader:

@@ -37,6 +37,14 @@ def get_album_medias(db: Session, id: int) -> list[models.Media]:
     return [models.Media.from_orm(m) for m in medias]
 
 
+def get_album_cover(db: Session, id: int) -> models.Media:
+    return db.query(schemas.Media)\
+             .join(schemas.AlbumMedia, schemas.Media.id == schemas.AlbumMedia.media_id)\
+             .filter(schemas.AlbumMedia.album_id == id)\
+             .order_by(schemas.Media.media_created.asc())\
+             .first()
+
+
 def create_album(db: Session, album: models.AlbumCreate) -> models.Album:
     db_album = schemas.Album(**album.dict())
     db.add(db_album)

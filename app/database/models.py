@@ -22,6 +22,49 @@ class User(UserBase):
         from_attributes = True
 
 
+class MediaBase(BaseModel):
+    name: str
+    hash: str
+    data: str
+    thumbnail: str
+    created_at: datetime
+    updated_at: datetime
+    size: int
+    media_created: datetime | None = None
+    media_type: str | None = None
+    mime_type: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+
+
+class MediaCreate(MediaBase):
+    pass
+
+
+class Media(MediaBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+
+class MediaOut(BaseModel):
+    data: list[Media]
+
+
+class MediaObjectOut(BaseModel):
+    data: Media
+
+
+class MediaUpload(BaseModel):
+    valid: list[Media]
+    invalid: list[str]
+
+
+class MediaUploadOut(BaseModel):
+    data: MediaUpload
+
+
 class AlbumBase(BaseModel):
     name: str
     public: bool
@@ -45,12 +88,16 @@ class AlbumIn(AlbumBase):
     pass
 
 
+class AlbumWithCover(Album):
+    cover: str | None = None
+
+
 class AlbumOut(BaseModel):
-    data: list[Album]
+    data: list[AlbumWithCover]
 
 
 class AlbumObjectOut(BaseModel):
-    data: Album
+    data: AlbumWithCover
 
 
 class AlbumMediaBase(BaseModel):
@@ -68,47 +115,3 @@ class AlbumMedia(AlbumMediaCreate):
 
     class Config:
         from_attributes = True
-
-
-class MediaBase(BaseModel):
-    name: str
-    hash: str
-    data: str
-    thumbnail: str
-    created_at: datetime
-    updated_at: datetime
-    size: int
-    media_created: datetime | None = None
-    media_type: str | None = None
-    mime_type: str | None = None
-    latitude: float | None = None
-    longitude: float | None = None
-
-
-class MediaCreate(MediaBase):
-    pass
-
-
-class Media(MediaBase):
-    id: int
-    album: Album | None = None
-
-    class Config:
-        from_attributes = True
-
-
-class MediaOut(BaseModel):
-    data: list[Media]
-
-
-class MediaObjectOut(BaseModel):
-    data: Media
-
-
-class MediaUpload(BaseModel):
-    valid: list[Media]
-    invalid: list[str]
-
-
-class MediaUploadOut(BaseModel):
-    data: MediaUpload
