@@ -37,34 +37,6 @@ class MediaBase(BaseModel):
     longitude: float | None = None
 
 
-class MediaCreate(MediaBase):
-    pass
-
-
-class Media(MediaBase):
-    id: int
-
-    class Config:
-        from_attributes = True
-
-
-class MediaOut(BaseModel):
-    data: list[Media]
-
-
-class MediaObjectOut(BaseModel):
-    data: Media
-
-
-class MediaUpload(BaseModel):
-    valid: list[Media]
-    invalid: list[str]
-
-
-class MediaUploadOut(BaseModel):
-    data: MediaUpload
-
-
 class AlbumBase(BaseModel):
     name: str
     public: bool
@@ -115,3 +87,37 @@ class AlbumMedia(AlbumMediaCreate):
 
     class Config:
         from_attributes = True
+
+
+class MediaCreate(MediaBase):
+    pass
+
+
+class Media(MediaBase):
+    id: int
+    album: Album | None = None
+
+    class Config:
+        from_attributes = True
+
+
+class MediaOut(BaseModel):
+    data: list[Media]
+
+
+class MediaObjectOut(BaseModel):
+    data: Media
+
+
+class MediaErrorUpload(BaseModel):
+    name: str
+    error: str
+
+
+class MediaUpload(BaseModel):
+    valid: list[Media]
+    invalid: list[MediaErrorUpload]
+
+
+class MediaUploadOut(BaseModel):
+    data: MediaUpload

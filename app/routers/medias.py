@@ -27,6 +27,14 @@ def validate_media_access(media: Media, user: User):
         raise HTTPException(status_code=403, detail="Forbidden access to a media from other user private album")
 
 
+@router.get("/ephemeris/", response_model=MediaOut, status_code=status.HTTP_200_OK)
+def read_ephemeris(
+        user: User = Depends(get_auth_user),
+        db: Session = Depends(get_db)
+):
+    return MediaOut(data=get_ephemeris(db, user.username))
+
+
 @router.get(
     "/{id}/",
     response_model=MediaObjectOut,
@@ -83,11 +91,3 @@ def read_media_thumbnail(
         raise HTTPException(status_code=404, detail="Thumbnail file not found")
 
     return file_path
-
-
-@router.get("/ephemeris/", response_model=MediaOut, status_code=status.HTTP_200_OK)
-def read_ephemeris(
-        user: User = Depends(get_auth_user),
-        db: Session = Depends(get_db)
-):
-    return MediaOut(data=get_ephemeris(db, user.username))

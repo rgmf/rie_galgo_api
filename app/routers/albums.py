@@ -11,7 +11,7 @@ from app.auth.auth import get_auth_user
 from app.database.database import get_db
 from app.database.models import (
     User, Album, AlbumIn, AlbumOut, AlbumObjectOut, AlbumCreate, MediaCreate,
-    MediaUpload, MediaUploadOut, MediaOut, AlbumWithCover, Media
+    MediaUpload, MediaUploadOut, MediaOut, AlbumWithCover, Media, MediaErrorUpload
 )
 from app.database.crud import (
     get_albums,
@@ -133,13 +133,20 @@ async def create_media(
                 )
                 media_upload_out.data.valid.append(crud_create_media(db, media_create, album.id))
             except IntegrityError as e:
+                db.rollback()
                 media_upload_out.data.invalid.append(
-                    f"Error uploading {file.filename}: the file already exists"
+                    MediaErrorUpload(
+                        name=file.filename,
+                        error=f"Error uploading {file.filename}: the file already exists"
+                    )
                 )
                 logging.debug(f"Error uploading {file.filename}: the file already exists: {e}")
         else:
             media_upload_out.data.invalid.append(
-                f"Error uploading {file.filename} file: {file_uploader.error()}"
+                MediaErrorUpload(
+                    name=file.filename,
+                    error=f"Error uploading {file.filename} file: {file_uploader.error()}"
+                )
             )
 
     return media_upload_out
