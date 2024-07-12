@@ -1,0 +1,75 @@
+version: "3.8"
+
+services:
+  rie_galgo_api:
+    build:
+      context: .
+      dockerfile: ./docker/fastapi/Dockerfile
+    networks:
+      - proxy
+      # - rie_galgo_network
+    volumes:
+      - ./app:/app/app
+      - ./tests:/app/tests
+      - ./media_data:/app/media
+    env_file:
+      - .env
+    environment:
+      MYSQL_HOST: rie_galgo_mysql
+      MYSQL_DATABASE: "${DB_DATABASE}"
+      MYSQL_USER: "${DB_USERNAME}"
+      MYSQL_PASSWORD: "${DB_PASSWORD}"
+      UPLOAD_DIR: "${UPLOAD_DIR}"
+    depends_on:
+      - rie_galgo_mysql
+    labels:
+      - "traefik.http.routers.fastapi.rule=Host(`rieapi.rgmf.es`)"
+      - "traefik.http.services.fastapi.loadbalancer.server.port=80"
+
+  rie_galgo_mysql:
+    image: mysql
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD}"
+      MYSQL_DATABASE: "${DB_DATABASE}"
+      MYSQL_USER: "${DB_USERNAME}"
+      MYSQL_PASSWORD: "${DB_PASSWORD}"
+    networks:
+      - proxy
+      # - rie_galgo_network
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+
+  # rie_galgo_mysql_test:
+  #   image: mysql
+  #   env_file:
+  #     - .env
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: "${DB_TEST_PASSWORD}"
+  #     MYSQL_DATABASE: "${DB_TEST_DATABASE}"
+  #     MYSQL_USER: "${DB_TEST_USERNAME}"
+  #     MYSQL_PASSWORD: "${DB_TEST_PASSWORD}"
+  #   networks:
+  #     - rie_galgo_network
+  #   ports:
+  #     - "3307:3306"
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 9191:8080
+    networks:
+      - proxy
+      # - rie_galgo_networ
+
+networks:
+  # rie_galgo_network:
+  #   driver: bridge
+  proxy:
+    external: true
+
+volumes:
+  mysql_data:
+  mysql_test_data:

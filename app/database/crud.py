@@ -1,5 +1,6 @@
 from datetime import datetime, UTC
 
+from sqlalchemy import extract, or_
 from sqlalchemy.orm import Session
 
 from . import schemas, models
@@ -60,8 +61,18 @@ def get_media_by_id(db: Session, id: int) -> models.Media | None:
     return models.Media.from_orm(media)
 
 
-def get_ephemeris(db: Session, username: str) -> list[models.Media]:
-    return []
+def get_ephemeris(db: Session, user_id: int) -> list[models.Media]:
+     medias = db.query(schemas.Media)\
+               .join(schemas.AlbumMedia, schemas.Media.id == schemas.AlbumMedia.media_id)\
+               .join(schemas.Album, schemas.AlbumMedia.album_id == schemas.Album.id)\
+               .filter(
+                   extract("month", schemas.Media.media_created) == datetime.today().month,
+                   extract("day", schemas.Media.media_created) == datetime.today().day,
+                   or_(schemas.Album.user_id == user_id, schemas.Album.public.is_(True))
+               )\
+               .order_by(schemas.Media.media_created.asc())\
+               .all()
+     return [models.Media.from_orm(m) for m in medias]
 
 
 def create_media(db: Session, media: models.MediaCreate, album_id: int) -> models.Media:

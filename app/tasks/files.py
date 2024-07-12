@@ -197,11 +197,9 @@ class FileUploader:
 
                 # Generate and save thumbnail
                 width, height = img.size
-                logging.debug(f"{width}x{height}")
                 if width >= THUMBNAILS_SIZE[0] * 2 and height >= THUMBNAILS_SIZE[1] * 2:
                     img.thumbnail((THUMBNAILS_SIZE[0] * 2, THUMBNAILS_SIZE[1] * 2))
                     width, height = img.size
-                logging.debug(f"{width}x{height}")
                 left = (width - THUMBNAILS_SIZE[0]) // 2
                 top = (height - THUMBNAILS_SIZE[1]) // 2
                 right = (width + THUMBNAILS_SIZE[0]) // 2

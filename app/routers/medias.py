@@ -32,7 +32,7 @@ def read_ephemeris(
         user: User = Depends(get_auth_user),
         db: Session = Depends(get_db)
 ):
-    return MediaOut(data=get_ephemeris(db, user.username))
+    return MediaOut(data=get_ephemeris(db, user.id))
 
 
 @router.get(
