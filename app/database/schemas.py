@@ -28,7 +28,7 @@ class Media(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(128), nullable=False)
-    hash = Column(String(172), unique=True)
+    hash = Column(String(172), nullable=False)
     data = Column(Text, nullable=False)
     thumbnail = Column(Text, nullable=False)
     size = Column(Integer, nullable=False)
@@ -43,6 +43,10 @@ class Media(Base):
     )
 
     album_media = relationship("AlbumMedia", back_populates="media", uselist=False)
+
+    __table_args__ = (
+        UniqueConstraint('hash', 'size', 'media_created', name='hash_size_media_created_uc'),
+    )
 
     @property
     def album(self):

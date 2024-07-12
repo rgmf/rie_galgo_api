@@ -8,7 +8,6 @@ services:
     ports:
       - "8000:80"
     networks:
-      - proxy
       - rie_galgo_network
     volumes:
       - ./app:/app/app
