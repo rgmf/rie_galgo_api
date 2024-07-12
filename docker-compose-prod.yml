@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/fastapi/Dockerfile
+    container_name: rie_galgo_api
     labels:
       # Habilitar Traefik para este servicio llamado "rie_galgo_api"
       - traefik.enable=true
@@ -43,6 +44,7 @@ services:
 
   rie_galgo_mysql:
     image: mysql
+    container_name: rie_galgo_mysql
     env_file:
       - .env
     environment:

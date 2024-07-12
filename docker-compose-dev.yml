@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/fastapi/Dockerfile
+    container_name: rie_galgo_api
     ports:
       - "8000:80"
     networks:
@@ -26,6 +27,7 @@ services:
 
   rie_galgo_mysql:
     image: mysql
+    container_name: rie_galgo_mysql
     env_file:
       - .env
     environment:
@@ -40,6 +42,7 @@ services:
 
   rie_galgo_mysql_test:
     image: mysql
+    container_name: rie_galgo_mysql_test
     env_file:
       - .env
     environment:
@@ -54,6 +57,7 @@ services:
 
   adminer:
     image: adminer
+    container_name: rie_galgo_adminer
     restart: always
     ports:
       - 9191:8080
