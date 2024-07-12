@@ -1,0 +1,66 @@
+services:
+  rie_galgo_api:
+    build:
+      context: .
+      dockerfile: ./docker/fastapi/Dockerfile
+    labels:
+      # Habilitar Traefik para este servicio llamado "rie_galgo_api"
+      - traefik.enable=true
+      # Definir el puerto dentro del servicio de Docker a utilizar
+      - traefik.http.services.rieapi.loadbalancer.server.port=80
+      # Hacer que Traefik utilice este dominio en HTTP (en Traefik se ha definido el entrypoint "http")
+      - traefik.http.routers.rieapi_http.entrypoints=http
+      - traefik.http.routers.rieapi_http.rule=Host(`rieapi.rgmf.es`)
+      # Usar la red públic "traefik_public" (declarada debajo)
+      - traefik.docker.network=traefik_public
+      # Hacer que Traefik use este dominio in HTTPS
+      - traefik.http.routers.rieapi_https.entrypoints=https
+      - traefik.http.routers.rieapi_https.rule=Host(`rieapi.rgmf.es`)
+      - traefik.http.routers.rieapi_https.tls=true
+      # Usar el resolver crado en Traefik llamado "le" (Let's Encrypt)
+      - traefik.http.routers.rieapi_https.tls.certresolver=le
+      # Middleware "rieapi_https_redirect" para redirigir tráfico HTTP a HTTPS
+      - traefik.http.middlewares.rieapi_https_redirect.redirectscheme.scheme=https
+      - traefik.http.middlewares.rieapi_https_redirect.redirectscheme.permanent=true
+      # Middleware para redirigir HTTP (router "rieapi_http" creado arriba) a HTTPS (recién creado rieapi_https_redirect de arriba)
+      - traefik.http.routers.rieapi_http.middlewares=rieapi_https_redirect
+    volumes:
+      - ./app:/app/app
+      - ./media_data:/app/media
+    networks:
+      - traefik_public
+      - rie_galgo_network
+    env_file:
+      - .env
+    environment:
+      MYSQL_HOST: rie_galgo_mysql
+      MYSQL_DATABASE: "${DB_DATABASE}"
+      MYSQL_USER: "${DB_USERNAME}"
+      MYSQL_PASSWORD: "${DB_PASSWORD}"
+      UPLOAD_DIR: "${UPLOAD_DIR}"
+    depends_on:
+      - rie_galgo_mysql
+
+  rie_galgo_mysql:
+    image: mysql
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD}"
+      MYSQL_DATABASE: "${DB_DATABASE}"
+      MYSQL_USER: "${DB_USERNAME}"
+      MYSQL_PASSWORD: "${DB_PASSWORD}"
+    networks:
+      - rie_galgo_network
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
+
+networks:
+  traefik_public:
+    external: true
+  rie_galgo_network:
+    driver: bridge
+

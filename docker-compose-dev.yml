@@ -9,7 +9,7 @@ services:
       - "8000:80"
     networks:
       - proxy
-      # - rie_galgo_network
+      - rie_galgo_network
     volumes:
       - ./app:/app/app
       - ./tests:/app/tests
@@ -35,24 +35,23 @@ services:
       MYSQL_USER: "${DB_USERNAME}"
       MYSQL_PASSWORD: "${DB_PASSWORD}"
     networks:
-      - proxy
-      # - rie_galgo_network
+      - rie_galgo_network
     volumes:
       - ./mysql_data:/var/lib/mysql
 
-  # rie_galgo_mysql_test:
-  #   image: mysql
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: "${DB_TEST_PASSWORD}"
-  #     MYSQL_DATABASE: "${DB_TEST_DATABASE}"
-  #     MYSQL_USER: "${DB_TEST_USERNAME}"
-  #     MYSQL_PASSWORD: "${DB_TEST_PASSWORD}"
-  #   networks:
-  #     - rie_galgo_network
-  #   ports:
-  #     - "3307:3306"
+  rie_galgo_mysql_test:
+    image: mysql
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: "${DB_TEST_PASSWORD}"
+      MYSQL_DATABASE: "${DB_TEST_DATABASE}"
+      MYSQL_USER: "${DB_TEST_USERNAME}"
+      MYSQL_PASSWORD: "${DB_TEST_PASSWORD}"
+    networks:
+      - rie_galgo_network
+    ports:
+      - "3307:3306"
 
   adminer:
     image: adminer
@@ -63,10 +62,8 @@ services:
       - rie_galgo_network
 
 networks:
-  # rie_galgo_network:
-  #   driver: bridge
-  proxy:
-    external: true
+  rie_galgo_network:
+    driver: bridge
 
 volumes:
   mysql_data:
