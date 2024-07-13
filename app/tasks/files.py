@@ -49,7 +49,7 @@ class Metadata:
 
     def __compute_date_time_original(self):
         if self.date_time_original is None:
-            self.date_time_original_dt = datetime.now()
+            self.date_time_original_dt = None
             return
 
         dto: str = str(self.date_time_original)
