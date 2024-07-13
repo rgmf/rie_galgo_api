@@ -49,12 +49,12 @@ class Metadata:
 
     def __compute_date_time_original(self):
         if self.date_time_original is None:
-            self.date_time_original_dt = None
+            self.date_time_original_dt = datetime.fromisoformat("1970-01-01T00:00:00")
             return
 
         dto: str = str(self.date_time_original)
         if len(dto) < 19:
-            self.date_time_original_dt = None
+            self.date_time_original_dt = datetime.fromisoformat("1970-01-01T00:00:00")
             return
 
         try:
@@ -63,7 +63,7 @@ class Metadata:
                 dto[11:13] + ":" + dto[14:16] + ":" + dto[17:19]
             )
         except Exception:
-            self.date_time_original_dt = None
+            self.date_time_original_dt = datetime.fromisoformat("1970-01-01T00:00:00")
 
     def __compute_latitude_and_longitude(self):
         if (
