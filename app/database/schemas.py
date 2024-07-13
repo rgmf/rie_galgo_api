@@ -32,7 +32,7 @@ class Media(Base):
     data = Column(Text, nullable=False)
     thumbnail = Column(Text, nullable=False)
     size = Column(Integer, nullable=False)
-    media_created = Column(DateTime)
+    media_created = Column(DateTime, nullable=False, default="1970-01-01 00:00:00")
     media_type = Column(String(255))
     mime_type = Column(String(255))
     latitude = Column(Double)
