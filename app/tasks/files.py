@@ -19,6 +19,7 @@ from fastapi import UploadFile
 logging.basicConfig(level=logging.DEBUG)
 
 BASE_UPLOAD_DIR = os.getenv("UPLOAD_DIR", "")
+BASE_ASSETS_DIR = os.getenv("ASSETS_DIR", "")
 
 TMP_DIR_NAME = "tmp"
 MEDIAS_DIR_NAME = "medias"
@@ -28,6 +29,9 @@ THUMBNAILS_SIZE = (512, 512)
 TMP_PATH = os.path.join(BASE_UPLOAD_DIR, TMP_DIR_NAME)
 MEDIAS_PATH = os.path.join(BASE_UPLOAD_DIR, MEDIAS_DIR_NAME)
 THUMBNAILS_PATH = os.path.join(BASE_UPLOAD_DIR, THUMBNAILS_DIR_NAME)
+
+THUMBNAIL_FALLBACK_NAME = "thumbnail_fallback.jpg"
+THUMBNAIL_FALLBACK_FILE_PATH = os.path.join(BASE_ASSETS_DIR, THUMBNAIL_FALLBACK_NAME)
 
 
 @dataclass

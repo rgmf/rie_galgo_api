@@ -19,6 +19,13 @@ In a single line:
 $ docker compose -f docker-compose-dev.yml up -d --build rie_galgo_api && docker compose -f docker-compose-dev.yml stop rie_galgo_api && docker compose -f docker-compose-dev.yml rm -f rie_galgo_api && docker compose -f docker-compose-dev.yml up -d rie_galgo_api
 ```
 
+# Changes in .env (add new environment variables)
+If you change the `.env` file then you'll need to recreate the containers. You can do that like this (this keeps data and don't delete anything):
+
+```shell
+$ docker compose -f docker-compose-dev.yml up --force-recreate -d
+```
+
 # Migrations: alembic
 Import *SQLAlchemy* models in `app/alembic/env.py` (these models are in `app/database/schemas.py`).
 

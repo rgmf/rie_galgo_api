@@ -28,6 +28,7 @@ services:
     volumes:
       - ./app:/app/app
       - ./media_data:/app/media
+      - ./assets:/app/assets
     networks:
       - traefik_public
       - rie_galgo_network

@@ -9,7 +9,7 @@ from app.auth.auth import get_auth_user
 from app.database.database import get_db
 from app.database.models import User, MediaOut, MediaObjectOut, Media
 from app.database.crud import get_ephemeris, get_media_by_id
-from app.tasks.files import BASE_UPLOAD_DIR
+from app.tasks.files import BASE_UPLOAD_DIR, THUMBNAIL_FALLBACK_FILE_PATH
 
 
 router = APIRouter(
@@ -87,7 +87,10 @@ def read_media_thumbnail(
     validate_media_access(media, user)
 
     file_path: str = os.path.join(BASE_UPLOAD_DIR, media.thumbnail)
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="Thumbnail file not found")
+    if os.path.exists(file_path):
+        return file_path
 
-    return file_path
+    if os.path.exists(THUMBNAIL_FALLBACK_FILE_PATH):
+        return THUMBNAIL_FALLBACK_FILE_PATH
+
+    raise HTTPException(status_code=404, detail="Thumbnail file not found")
