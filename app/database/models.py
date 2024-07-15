@@ -22,21 +22,6 @@ class User(UserBase):
         from_attributes = True
 
 
-class MediaBase(BaseModel):
-    name: str
-    hash: str
-    data: str
-    thumbnail: str
-    created_at: datetime
-    updated_at: datetime
-    size: int
-    media_created: datetime | None = None
-    media_type: str | None = None
-    mime_type: str | None = None
-    latitude: float | None = None
-    longitude: float | None = None
-
-
 class AlbumBase(BaseModel):
     name: str
     public: bool
@@ -87,6 +72,21 @@ class AlbumMedia(AlbumMediaCreate):
 
     class Config:
         from_attributes = True
+
+
+class MediaBase(BaseModel):
+    name: str
+    hash: str
+    data: str
+    thumbnail: str
+    created_at: datetime
+    updated_at: datetime
+    size: int
+    media_created: datetime
+    media_type: str | None = None
+    mime_type: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
 
 
 class MediaCreate(MediaBase):

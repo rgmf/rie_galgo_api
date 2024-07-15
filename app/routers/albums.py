@@ -21,7 +21,7 @@ from app.database.crud import (
     create_album as crud_create_album,
     create_media as crud_create_media
 )
-from app.tasks.files import FileUploader, get_base64_media_data
+from app.tasks.files import FileUploader, get_base64_media_data, COVER_FALLBACK_FILE_PATH
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -48,7 +48,10 @@ def read_albums(
     for a in albums:
         media_cover: Media | None = get_album_cover(db, a.id)
         album_with_cover = AlbumWithCover(**a.model_dump())
-        album_with_cover.cover = get_base64_media_data(media_cover.thumbnail) if media_cover else None
+        album_with_cover.cover = (
+            get_base64_media_data(media_cover.thumbnail) if media_cover
+            else get_base64_media_data(COVER_FALLBACK_FILE_PATH)
+        )
         response.append(album_with_cover)
 
     return AlbumOut(data=response)
