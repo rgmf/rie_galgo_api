@@ -33,7 +33,7 @@ def get_album_medias(db: Session, id: int) -> list[models.Media]:
     medias = db.query(schemas.Media)\
                .join(schemas.AlbumMedia, schemas.Media.id == schemas.AlbumMedia.media_id)\
                .filter(schemas.AlbumMedia.album_id == id)\
-               .order_by(schemas.Media.media_created.asc())\
+               .order_by(schemas.Media.media_created.desc())\
                .all()
     return [models.Media.from_orm(m) for m in medias]
 
@@ -42,7 +42,7 @@ def get_album_cover(db: Session, id: int) -> models.Media:
     return db.query(schemas.Media)\
              .join(schemas.AlbumMedia, schemas.Media.id == schemas.AlbumMedia.media_id)\
              .filter(schemas.AlbumMedia.album_id == id)\
-             .order_by(schemas.Media.media_created.asc())\
+             .order_by(schemas.Media.media_created.desc())\
              .first()
 
 
@@ -80,6 +80,10 @@ def create_media(db: Session, media: models.MediaCreate, album_id: int) -> model
     db.add(db_media)
     db.commit()
     db.refresh(db_media)
+
+    db_album = db.query(schemas.Album).get(album_id)
+    db_album.updated_at = datetime.now(UTC)
+    db.commit()
 
     album_media = models.AlbumMediaCreate(
         media_id=db_media.id,
