@@ -109,14 +109,11 @@ class MediaObjectOut(BaseModel):
     data: Media
 
 
-class MediaErrorUpload(BaseModel):
-    name: str
-    error: str
-
-
 class MediaUpload(BaseModel):
-    valid: list[Media]
-    invalid: list[MediaErrorUpload]
+    filename: str
+    upload_error: bool
+    message: str
+    media: Media | None = None
 
 
 class MediaUploadOut(BaseModel):

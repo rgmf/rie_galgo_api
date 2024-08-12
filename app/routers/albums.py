@@ -11,7 +11,7 @@ from app.auth.auth import get_auth_user
 from app.database.database import get_db
 from app.database.models import (
     User, Album, AlbumIn, AlbumOut, AlbumObjectOut, AlbumCreate, MediaCreate,
-    MediaUpload, MediaUploadOut, MediaOut, AlbumWithCover, Media, MediaErrorUpload
+    MediaUpload, MediaUploadOut, MediaOut, AlbumWithCover, Media
 )
 from app.database.crud import (
     get_albums,
@@ -102,54 +102,56 @@ def create_album(
 )
 async def create_media(
         id: int,
-        files: list[UploadFile],
+        file: UploadFile,
         user: User = Depends(get_auth_user),
         db: Session = Depends(get_db)
 ):
     album: Album = get_album_by_id(db, id)
     validate_album_access(album, user)
 
-    media_upload_out = MediaUploadOut(
-        data=MediaUpload(valid=[], invalid=[])
-    )
+    file_uploader = FileUploader(file)
+    await file_uploader.upload()
+    file_uploader.cleanup()
 
-    for file in files:
-        file_uploader = FileUploader(file)
-        await file_uploader.upload()
-        file_uploader.cleanup()
-
-        if not file_uploader.has_error():
-            try:
-                media_create = MediaCreate(
-                    name=str(file.filename),
-                    hash=file_uploader.file_hash,
-                    data=file_uploader.relative_file_path,
-                    thumbnail=file_uploader.relative_thumbnail_path,
-                    created_at=datetime.now(UTC),
-                    updated_at=datetime.now(UTC),
-                    size=file_uploader.file_size,
-                    media_created=file_uploader.metadata.date_time_original_dt,
-                    mime_type=file_uploader.mime_type,
-                    media_type=file_uploader.media_type,
-                    latitude=file_uploader.metadata.latitude_decimal_degrees,
-                    longitude=file_uploader.metadata.longitude_decimal_degrees
-                )
-                media_upload_out.data.valid.append(crud_create_media(db, media_create, album.id))
-            except IntegrityError as e:
-                db.rollback()
-                media_upload_out.data.invalid.append(
-                    MediaErrorUpload(
-                        name=file.filename,
-                        error=f"Error uploading {file.filename}: the file already exists"
-                    )
-                )
-                logging.debug(f"Error uploading {file.filename}: the file already exists: {e}")
-        else:
-            media_upload_out.data.invalid.append(
-                MediaErrorUpload(
-                    name=file.filename,
-                    error=f"Error uploading {file.filename} file: {file_uploader.error()}"
+    if not file_uploader.has_error():
+        try:
+            media_create = MediaCreate(
+                name=str(file.filename),
+                hash=file_uploader.file_hash,
+                data=file_uploader.relative_file_path,
+                thumbnail=file_uploader.relative_thumbnail_path,
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
+                size=file_uploader.file_size,
+                media_created=file_uploader.metadata.date_time_original_dt,
+                mime_type=file_uploader.mime_type,
+                media_type=file_uploader.media_type,
+                latitude=file_uploader.metadata.latitude_decimal_degrees,
+                longitude=file_uploader.metadata.longitude_decimal_degrees
+            )
+            return MediaUploadOut(
+                data=MediaUpload(
+                    filename=file.filename,
+                    upload_error=False,
+                    message=f"File {file.filename} uploaded",
+                    media=crud_create_media(db, media_create, album.id)
                 )
             )
-
-    return media_upload_out
+        except IntegrityError as e:
+            db.rollback()
+            logging.debug(f"Error uploading {file.filename} file: the file already exists: {e}")
+            return MediaUploadOut(
+                data=MediaUpload(
+                    filename=file.filename,
+                    upload_error=True,
+                    message=f"Error uploading {file.filename} file: the file already exists"
+                )
+            )
+    else:
+        return MediaUploadOut(
+            data=MediaUpload(
+                filename=file.filename,
+                upload_error=True,
+                message=f"Error uploading {file.filename} file: {file_uploader.error()}"
+            )
+        )
