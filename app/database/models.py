@@ -22,6 +22,10 @@ class User(UserBase):
         from_attributes = True
 
 
+class UserOut(BaseModel):
+    data: UserBase
+
+
 class AlbumBase(BaseModel):
     name: str
     public: bool
