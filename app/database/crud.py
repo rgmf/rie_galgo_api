@@ -29,11 +29,13 @@ def get_albums(db: Session, username: str) -> list[models.Album]:
     return [models.Album.from_orm(a) for a in albums]
 
 
-def get_album_medias(db: Session, id: int) -> list[models.Media]:
+def get_album_medias(db: Session, id: int, skip: int, limit: int) -> list[models.Media]:
     medias = db.query(schemas.Media)\
                .join(schemas.AlbumMedia, schemas.Media.id == schemas.AlbumMedia.media_id)\
                .filter(schemas.AlbumMedia.album_id == id)\
                .order_by(schemas.Media.media_created.desc())\
+               .offset(skip)\
+               .limit(limit)\
                .all()
     return [models.Media.from_orm(m) for m in medias]
 
@@ -61,7 +63,7 @@ def get_media_by_id(db: Session, id: int) -> models.Media | None:
     return models.Media.from_orm(media)
 
 
-def get_ephemeris(db: Session, user_id: int) -> list[models.Media]:
+def get_ephemeris(db: Session, user_id: int, skip: int, limit: int) -> list[models.Media]:
      medias = db.query(schemas.Media)\
                .join(schemas.AlbumMedia, schemas.Media.id == schemas.AlbumMedia.media_id)\
                .join(schemas.Album, schemas.AlbumMedia.album_id == schemas.Album.id)\
@@ -70,6 +72,8 @@ def get_ephemeris(db: Session, user_id: int) -> list[models.Media]:
                    extract("day", schemas.Media.media_created) == datetime.today().day,
                    or_(schemas.Album.user_id == user_id, schemas.Album.public.is_(True))
                )\
+               .offset(skip)\
+               .limit(limit)\
                .order_by(schemas.Media.media_created.asc())\
                .all()
      return [models.Media.from_orm(m) for m in medias]

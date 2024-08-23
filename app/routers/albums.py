@@ -65,12 +65,14 @@ def read_albums(
 )
 def read_album_medias(
         id: int,
+        skip: int = 0,
+        limit: int = 50,
         user: User = Depends(get_auth_user),
         db: Session = Depends(get_db)
 ):
     album: Album = get_album_by_id(db, id)
     validate_album_access(album, user)
-    return MediaOut(data=get_album_medias(db, id))
+    return MediaOut(data=get_album_medias(db, id, skip, limit))
 
 
 @router.post("/", response_model=AlbumObjectOut, status_code=status.HTTP_201_CREATED)

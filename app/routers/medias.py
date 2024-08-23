@@ -29,10 +29,12 @@ def validate_media_access(media: Media, user: User):
 
 @router.get("/ephemeris/", response_model=MediaOut, status_code=status.HTTP_200_OK)
 def read_ephemeris(
+        skip: int = 0,
+        limit: int = 50,
         user: User = Depends(get_auth_user),
         db: Session = Depends(get_db)
 ):
-    return MediaOut(data=get_ephemeris(db, user.id))
+    return MediaOut(data=get_ephemeris(db, user.id, skip, limit))
 
 
 @router.get(
