@@ -72,9 +72,9 @@ def get_ephemeris(db: Session, user_id: int, skip: int, limit: int) -> list[mode
                    extract("day", schemas.Media.media_created) == datetime.today().day,
                    or_(schemas.Album.user_id == user_id, schemas.Album.public.is_(True))
                )\
+               .order_by(schemas.Media.media_created.asc())\
                .offset(skip)\
                .limit(limit)\
-               .order_by(schemas.Media.media_created.asc())\
                .all()
      return [models.Media.from_orm(m) for m in medias]
 
