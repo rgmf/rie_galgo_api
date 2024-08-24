@@ -64,19 +64,21 @@ def get_media_by_id(db: Session, id: int) -> models.Media | None:
 
 
 def get_ephemeris(db: Session, user_id: int, skip: int, limit: int) -> list[models.Media]:
-     medias = db.query(schemas.Media)\
-               .join(schemas.AlbumMedia, schemas.Media.id == schemas.AlbumMedia.media_id)\
-               .join(schemas.Album, schemas.AlbumMedia.album_id == schemas.Album.id)\
-               .filter(
-                   extract("month", schemas.Media.media_created) == datetime.today().month,
-                   extract("day", schemas.Media.media_created) == datetime.today().day,
-                   or_(schemas.Album.user_id == user_id, schemas.Album.public.is_(True))
-               )\
-               .order_by(schemas.Media.media_created.asc())\
-               .offset(skip)\
-               .limit(limit)\
-               .all()
-     return [models.Media.from_orm(m) for m in medias]
+    medias = db.query(schemas.Media)\
+                .join(schemas.AlbumMedia, schemas.Media.id == schemas.AlbumMedia.media_id)\
+                .join(schemas.Album, schemas.AlbumMedia.album_id == schemas.Album.id)\
+                .filter(
+                    extract("month", schemas.Media.media_created) == datetime.today().month,
+                    extract("day", schemas.Media.media_created) == datetime.today().day,
+                    or_(schemas.Album.user_id == user_id, schemas.Album.public.is_(True))
+                )\
+                .distinct(schemas.Media.id)\
+                .order_by(schemas.Media.media_created.asc())\
+                .offset(skip)\
+                .limit(limit)\
+                .all()
+
+    return [models.Media.from_orm(m) for m in medias]
 
 
 def create_media(db: Session, media: models.MediaCreate, album_id: int) -> models.Media:
