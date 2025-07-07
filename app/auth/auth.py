@@ -15,7 +15,7 @@ from app.database.database import get_db
 # Result of: openssl rand -hex 32
 SECRET_KEY = "020f2660714548e17276340ccf9b627e6849bbe7997c8b7a88fbc618f73eb629"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MIN = 60
+ACCESS_TOKEN_EXPIRE_MIN = 7 * 24 * 60
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
